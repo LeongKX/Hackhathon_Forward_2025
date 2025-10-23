@@ -18,18 +18,21 @@ A data-driven web application for fleet operators to ingest raw GPS/IoT CSV file
 ## ✨ Features
 
 ### CSV Import
+
 - **Participants Import**: Bulk upload participant data with automatic email validation and deduplication
 - **Telemetry Import**: Import vehicle GPS/IoT data with support for 50k+ rows via chunked transactions
 - **Smart Parsing**: Accepts common column aliases and handles mixed/dirty data gracefully
 - **Error Reporting**: Detailed row-by-row error reporting with success summaries
 
 ### Analytics Dashboard
+
 - **KPIs**: Real-time metrics including distance traveled, average speed, and idle time
 - **Interactive Charts**: Speed and fuel level visualization over time using Chart.js
 - **Route Mapping**: Vehicle route visualization on OpenStreetMap with polylines and markers
 - **Advanced Filtering**: Filter by vehicle and date range with instant updates
 
 ### User Experience
+
 - **Light/Dark Theme**: Seamless theme switching with system preference detection
 - **Responsive Design**: Mobile-first design that works on all screen sizes
 - **Accessibility**: WCAG-compliant UI components from shadcn/ui
@@ -37,59 +40,66 @@ A data-driven web application for fleet operators to ingest raw GPS/IoT CSV file
 
 ## 🛠 Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| **Framework** | Next.js 16 (App Router, TypeScript) |
-| **Styling** | Tailwind CSS 4 |
-| **Components** | shadcn/ui (Radix UI primitives) |
-| **Database** | Prisma ORM + SQLite (PostgreSQL-ready) |
-| **CSV Processing** | csv-parse |
-| **Charts** | Chart.js + react-chartjs-2 |
-| **Maps** | Leaflet + react-leaflet (OpenStreetMap) |
-| **Theme** | next-themes |
-| **Icons** | Lucide React |
+| Category           | Technology                              |
+| ------------------ | --------------------------------------- |
+| **Framework**      | Next.js 16 (App Router, TypeScript)     |
+| **Styling**        | Tailwind CSS 4                          |
+| **Components**     | shadcn/ui (Radix UI primitives)         |
+| **Database**       | Prisma ORM + SQLite (PostgreSQL-ready)  |
+| **CSV Processing** | csv-parse                               |
+| **Charts**         | Chart.js + react-chartjs-2              |
+| **Maps**           | Leaflet + react-leaflet (OpenStreetMap) |
+| **Theme**          | next-themes                             |
+| **Icons**          | Lucide React                            |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 cd /path/to/project
 ```
 
 2. **Install dependencies**
+
 ```bash
 npm install
 ```
 
 3. **Set up environment variables**
+
 ```bash
 # Create .env file
 echo "DATABASE_URL=\"file:./dev.db\"" > .env
 ```
 
 4. **Initialize the database**
+
 ```bash
 npx prisma migrate dev
 ```
 
 5. **Generate Prisma Client**
+
 ```bash
 npx prisma generate
 ```
 
 6. **Run the development server**
+
 ```bash
 npm run dev
 ```
 
 7. **Open in browser**
+
 ```
 http://localhost:3000
 ```
@@ -115,12 +125,14 @@ npx tsc --noEmit
 Import hackathon participants or team members.
 
 **Required Headers** (accepts aliases):
+
 - `name` / `Name` / `full name`
 - `email` / `Email`
 - `team` / `Team` / `team name` (optional)
 - `score` / `Score` / `points` / `Points` (optional)
 
 **Example:**
+
 ```csv
 name,email,team,score
 Ada Lovelace,ada@example.com,Team Alpha,95
@@ -129,6 +141,7 @@ Linus Torvalds,linus@example.com,Team Kernel,100
 ```
 
 **Validation Rules:**
+
 - Name is required
 - Email must be valid format
 - Email must be unique (duplicates skipped)
@@ -141,12 +154,14 @@ Linus Torvalds,linus@example.com,Team Kernel,100
 Import vehicle GPS and IoT sensor data.
 
 **Required Headers** (case-insensitive):
+
 - `Plate No.` - Vehicle plate number
 - `Timestamp` - ISO 8601 format (UTC preferred)
 - `Latitude` - GPS latitude coordinate
 - `Longitude` - GPS longitude coordinate
 
 **Optional Headers:**
+
 - `Speed` - Vehicle speed (km/h)
 - `Fuel level percentage` - Fuel percentage (0-100)
 - `Fuel level litre` - Fuel volume (liters)
@@ -157,6 +172,7 @@ Import vehicle GPS and IoT sensor data.
 - `Located / Not located` - GPS fix status (located/not located)
 
 **Example:**
+
 ```csv
 Plate No.,Timestamp,Latitude,Longitude,Speed,Fuel level percentage,Fuel level litre,Engine status (on/off),Direction,Vehicle battery voltage,Odometer,Located / Not located
 ABC1234,2025-10-23T08:00:00Z,1.3521,103.8198,45,75.5,22.5,on,90,12.8,15420,located
@@ -165,17 +181,20 @@ XYZ5678,2025-10-23T08:00:00Z,1.2900,103.8500,60,82.0,28.5,on,180,13.0,28750,loca
 ```
 
 **Data Normalization:**
+
 - Numbers: Commas removed, empty values → null
 - Booleans: on/off, true/false, yes/no, 1/0, located/not located
 - Timestamps: Parsed via JavaScript Date (ISO 8601 preferred)
 
 **Validation Rules:**
+
 - Plate number is required
 - Timestamp must be valid
 - Coordinates are required
 - Invalid numeric fields converted to null (row not rejected)
 
 **Performance:**
+
 - Chunked inserts (500 rows/transaction)
 - Supports files up to 50k+ rows
 - Vehicles created/updated automatically by plate
@@ -189,6 +208,7 @@ XYZ5678,2025-10-23T08:00:00Z,1.2900,103.8500,60,82.0,28.5,on,180,13.0,28750,loca
 Import participants from CSV file.
 
 **Request:**
+
 ```http
 POST /api/import
 Content-Type: multipart/form-data
@@ -197,6 +217,7 @@ file: <CSV file>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "imported": 10,
@@ -209,6 +230,7 @@ file: <CSV file>
 ```
 
 **Error Response (400/500):**
+
 ```json
 {
   "error": "No valid rows to import"
@@ -222,6 +244,7 @@ file: <CSV file>
 Import vehicle telemetry from CSV file.
 
 **Request:**
+
 ```http
 POST /api/telemetry/import
 Content-Type: multipart/form-data
@@ -230,6 +253,7 @@ file: <CSV file>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "imported": 250,
@@ -241,6 +265,7 @@ file: <CSV file>
 ```
 
 **Error Response (400/500):**
+
 ```json
 {
   "error": "Empty CSV file"
@@ -254,16 +279,19 @@ file: <CSV file>
 Fetch vehicles and filtered telemetry data for dashboard.
 
 **Query Parameters:**
+
 - `plate` (string, optional) - Vehicle plate number
 - `from` (ISO date string, optional) - Start date
 - `to` (ISO date string, optional) - End date
 
 **Example:**
+
 ```http
 GET /api/dashboard/data?plate=ABC1234&from=2025-10-23T08:00:00Z&to=2025-10-23T12:00:00Z
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "vehicles": [
@@ -371,6 +399,7 @@ Click the sun/moon icon in the header to toggle between light and dark modes.
 All requirements have been implemented and tested:
 
 ### Participants Import
+
 - ✅ CSV upload with name, email, team, score
 - ✅ Accepts common column aliases
 - ✅ Email uniqueness validation (file + DB)
@@ -378,6 +407,7 @@ All requirements have been implemented and tested:
 - ✅ Data persisted to Participant table
 
 ### Telemetry Import
+
 - ✅ CSV upload with required and optional columns
 - ✅ Case-insensitive column matching
 - ✅ Number normalization (commas, nulls)
@@ -388,6 +418,7 @@ All requirements have been implemented and tested:
 - ✅ Error details with row numbers
 
 ### Dashboard
+
 - ✅ Vehicle selector dropdown
 - ✅ Date range filters (from/to)
 - ✅ Distance traveled KPI (odometer delta)
@@ -400,6 +431,7 @@ All requirements have been implemented and tested:
 - ✅ Query limit (2000 points)
 
 ### UX & Non-Functional
+
 - ✅ Home page with clear navigation
 - ✅ File chooser with CSV validation
 - ✅ Status messages and toast notifications
@@ -410,6 +442,7 @@ All requirements have been implemented and tested:
 - ✅ Error resilience (partial imports succeed)
 
 ### Technical
+
 - ✅ Next.js App Router with TypeScript
 - ✅ Prisma with SQLite (Postgres-ready)
 - ✅ Proper indexes on database
@@ -484,6 +517,7 @@ MIT
 ## 🤝 Contributing
 
 This is a hackathon project. For production use, consider:
+
 - Adding authentication/authorization
 - Implementing pagination for large datasets
 - Adding data aggregation for performance

@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Hackathon participant records imported from CSV
+model Participant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  team      String?
+  score     Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Fleet telemetry schema
+model Vehicle {
+  id        Int         @id @default(autoincrement())
+  plateNo   String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  telemetry Telemetry[]
+}
+
+model Telemetry {
+  id              Int       @id @default(autoincrement())
+  vehicleId       Int
+  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  timestamp       DateTime
+  latitude        Float
+  longitude       Float
+  speedKph        Float?
+  fuelPercent     Float?
+  fuelLitre       Float?
+  engineOn        Boolean?
+  directionDeg    Float?
+  batteryVoltage  Float?
+  odometerKm      Float?
+  located         Boolean?
+
+  @@index([vehicleId, timestamp])
+  @@index([timestamp])
+}
