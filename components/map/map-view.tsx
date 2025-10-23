@@ -10,7 +10,9 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L, { type LatLngExpression } from "leaflet";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Maximize2 } from "lucide-react";
 
 type Point = { lat: number; lon: number };
 
@@ -23,17 +25,23 @@ const COLORS = [
   "#06b6d4",
 ];
 
-function FitToSegments({ segments }: { segments: Point[][] }) {
+function FitToSegments({
+  segments,
+  trigger,
+}: {
+  segments: Point[][];
+  trigger: number;
+}) {
   const map = useMap();
   const bounds = useMemo(() => {
     const all: [number, number][] = [];
     for (const seg of segments) for (const p of seg) all.push([p.lat, p.lon]);
     return all.length ? L.latLngBounds(all) : null;
   }, [segments]);
-  // Fit on mount/update
+  // Fit on mount/update or when trigger changes
   useEffect(() => {
     if (bounds) map.fitBounds(bounds, { padding: [24, 24] });
-  }, [bounds, map]);
+  }, [bounds, map, trigger]);
   return null;
 }
 
@@ -55,6 +63,8 @@ export function MapView({
     return [];
   }, [segments, points]);
 
+  const [fitTrigger, setFitTrigger] = useState(0);
+
   const first: LatLngExpression =
     segs.length && segs[0].length ? [segs[0][0].lat, segs[0][0].lon] : [0, 0];
 
@@ -73,7 +83,9 @@ export function MapView({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
         />
-        {segs.length ? <FitToSegments segments={segs} /> : null}
+        {segs.length ? (
+          <FitToSegments segments={segs} trigger={fitTrigger} />
+        ) : null}
         {segs.map((seg, i) => {
           const latlngs = seg.map((p) => [p.lat, p.lon]) as LatLngExpression[];
           const color = COLORS[i % COLORS.length];
@@ -118,6 +130,19 @@ export function MapView({
           );
         })}
       </MapContainer>
+
+      {/* Fit to route button */}
+      {segs.length > 0 && (
+        <Button
+          size="sm"
+          variant="secondary"
+          className="absolute top-2 right-2 z-[1000] shadow-md"
+          onClick={() => setFitTrigger((t) => t + 1)}
+        >
+          <Maximize2 className="h-4 w-4 mr-1" />
+          Fit to route
+        </Button>
+      )}
 
       {/* Legend */}
       {legend && legend.length ? (

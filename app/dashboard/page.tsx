@@ -164,6 +164,10 @@ export default async function DashboardPage({
               </Button>
             </div>
           </form>
+          <div className="mt-3 text-xs text-muted-foreground border-t pt-3">
+            <strong>Trip segmentation:</strong> Routes are split by time gap ≥
+            30 min OR distance jump ≥ 5 km; engine state used when present.
+          </div>
         </CardContent>
       </Card>
 
