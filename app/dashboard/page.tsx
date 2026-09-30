@@ -23,8 +23,19 @@ export default async function DashboardPage({
 }) {
   const sp = await searchParams;
   const plate = sp.plate;
-  const from = sp.from ? new Date(sp.from) : undefined;
-  const to = sp.to ? new Date(sp.to) : undefined;
+  // The <input type="datetime-local"> gives a zone-less "YYYY-MM-DDTHH:mm"
+  // string. Parse it as UTC so it round-trips with the UTC-based data range,
+  // chart labels and the "Available data (UTC)" hint below. Parsing with a
+  // bare `new Date(...)` would instead treat it as the server's local zone and
+  // shift the whole filter by the UTC offset.
+  const parseUtc = (s?: string) => {
+    if (!s) return undefined;
+    const withSecs = s.length === 16 ? `${s}:00` : s;
+    const d = new Date(`${withSecs}Z`);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  };
+  const from = parseUtc(sp.from);
+  const to = parseUtc(sp.to);
 
   const vehicles = await prisma.vehicle.findMany({
     orderBy: { plateNo: "asc" },
@@ -60,13 +71,68 @@ export default async function DashboardPage({
   if (from) where.timestamp = { ...(where.timestamp ?? {}), gte: from };
   if (to) where.timestamp = { ...(where.timestamp ?? {}), lte: to };
 
-  const data = selected
-    ? await prisma.telemetry.findMany({
-        where,
-        orderBy: { timestamp: "asc" },
-        take: 2000,
+  // Available date range for the selected vehicle (constrains the date pickers)
+  const range = where.vehicleId
+    ? await prisma.telemetry.aggregate({
+        where: { vehicleId: where.vehicleId },
+        _min: { timestamp: true },
+        _max: { timestamp: true },
       })
-    : [];
+    : null;
+  const minTs = range?._min.timestamp
+    ? range._min.timestamp.toISOString().slice(0, 16)
+    : undefined;
+  const maxTs = range?._max.timestamp
+    ? range._max.timestamp.toISOString().slice(0, 16)
+    : undefined;
+
+  // Evenly downsample to ~2000 points across the WHOLE filtered range.
+  // A plain `take: 2000` would only return the earliest rows and hide the
+  // rest of the period, so we stride through the full result set instead.
+  type Row = {
+    timestamp: Date;
+    latitude: number;
+    longitude: number;
+    speedKph: number | null;
+    fuelPercent: number | null;
+    engineOn: boolean | null;
+    odometerKm: number | null;
+    located: boolean | null;
+  };
+
+  const MAX_POINTS = 2000;
+  let data: Row[] = [];
+
+  if (selected && where.vehicleId != null) {
+    const total = await prisma.telemetry.count({ where });
+    const stride = Math.max(1, Math.ceil(total / MAX_POINTS));
+
+    const conds = [`"vehicleId" = $1`];
+    const params: unknown[] = [where.vehicleId];
+    if (from) {
+      params.push(from);
+      conds.push(`"timestamp" >= $${params.length}`);
+    }
+    if (to) {
+      params.push(to);
+      conds.push(`"timestamp" <= $${params.length}`);
+    }
+    params.push(stride);
+    const strideParam = params.length;
+
+    const sql = `
+      SELECT "timestamp", "latitude", "longitude", "speedKph",
+             "fuelPercent", "engineOn", "odometerKm", "located"
+      FROM (
+        SELECT *, row_number() OVER (ORDER BY "timestamp" ASC) AS rn
+        FROM "Telemetry"
+        WHERE ${conds.join(" AND ")}
+      ) t
+      WHERE (rn - 1) % $${strideParam} = 0
+      ORDER BY "timestamp" ASC`;
+
+    data = await prisma.$queryRawUnsafe<Row[]>(sql, ...params);
+  }
 
   const labels = data.map((d) => d.timestamp.toISOString().slice(11, 19));
   const speeds = data.map((d) => d.speedKph ?? 0);
@@ -146,6 +212,8 @@ export default async function DashboardPage({
                 type="datetime-local"
                 name="from"
                 defaultValue={from?.toISOString().slice(0, 16)}
+                min={minTs}
+                max={maxTs}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
@@ -155,6 +223,8 @@ export default async function DashboardPage({
                 type="datetime-local"
                 name="to"
                 defaultValue={to?.toISOString().slice(0, 16)}
+                min={minTs}
+                max={maxTs}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
@@ -164,6 +234,12 @@ export default async function DashboardPage({
               </Button>
             </div>
           </form>
+          {minTs && maxTs && (
+            <div className="mt-3 text-xs text-muted-foreground">
+              Available data for <strong>{selected}</strong>:{" "}
+              {minTs.replace("T", " ")} → {maxTs.replace("T", " ")} (UTC)
+            </div>
+          )}
           <div className="mt-3 text-xs text-muted-foreground border-t pt-3">
             <strong>Trip segmentation:</strong> Routes are split by time gap ≥
             30 min OR distance jump ≥ 5 km; engine state used when present.

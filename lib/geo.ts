@@ -8,6 +8,7 @@ export type TelemetryLike = {
   speedKph?: number | null;
   engineOn?: boolean | null;
   odometerKm?: number | null;
+  located?: boolean | null;
 };
 
 export type SimplePoint = { lat: number; lon: number; ts: number };
@@ -30,6 +31,8 @@ export type SegmentOptions = {
   useEngineState?: boolean; // use engine on/off to split, default true
   minSegmentSize?: number; // discard segments with fewer points, default 2
   maxPointsPerSegment?: number; // optional stride downsampling cap
+  dropUnlocated?: boolean; // drop points where located === false, default true
+  maxSpeedKph?: number; // teleport-outlier threshold, default 200
 };
 
 export function isValidLatLon(lat?: number | null, lon?: number | null) {
@@ -41,8 +44,30 @@ export function isValidLatLon(lat?: number | null, lon?: number | null) {
     lat >= -90 &&
     lat <= 90 &&
     lon >= -180 &&
-    lon <= 180
+    lon <= 180 &&
+    // Reject "null island" (0,0) — a common bad-GPS fallback that plots off Africa
+    !(Math.abs(lat) < 0.01 && Math.abs(lon) < 0.01)
   );
+}
+
+// Drop single-point "teleport" glitches: a fix implying an impossible ground
+// speed relative to the previous good point (e.g. a momentary jump to Africa).
+export function dropTeleportOutliers(
+  pts: SimplePoint[],
+  maxSpeedKph = 200
+): SimplePoint[] {
+  if (pts.length < 2) return pts;
+  const out: SimplePoint[] = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i];
+    const prev = out[out.length - 1];
+    const dtH = Math.abs(p.ts - prev.ts) / (3600 * 1000);
+    const dk = haversineKm(prev, p);
+    const impliedKph = dtH > 0 ? dk / dtH : dk > 0 ? Infinity : 0;
+    if (impliedKph > maxSpeedKph) continue; // skip the glitch, keep prev
+    out.push(p);
+  }
+  return out;
 }
 
 export function haversineKm(
@@ -95,11 +120,15 @@ export function segmentTelemetry(
   const useEngineState = opts.useEngineState ?? true;
   const minSegmentSize = opts.minSegmentSize ?? 2;
   const maxPointsPerSegment = opts.maxPointsPerSegment ?? 2000;
+  const dropUnlocated = opts.dropUnlocated ?? true;
+  const maxSpeedKph = opts.maxSpeedKph ?? 200;
 
   // Normalize and filter invalid points
-  const pts: SimplePoint[] = [];
+  let pts: SimplePoint[] = [];
   for (const r of rows) {
     if (!isValidLatLon(r.latitude, r.longitude)) continue;
+    // Drop fixes the device itself flagged as not GPS-located
+    if (dropUnlocated && r.located === false) continue;
     const ts =
       r.timestamp instanceof Date
         ? r.timestamp.getTime()
@@ -107,6 +136,8 @@ export function segmentTelemetry(
     if (!Number.isFinite(ts)) continue;
     pts.push({ lat: r.latitude, lon: r.longitude, ts });
   }
+  // Remove lone teleport glitches (impossible implied speed)
+  pts = dropTeleportOutliers(pts, maxSpeedKph);
   if (pts.length === 0) return { segments: [], stats: [] };
 
   const segments: Segment[] = [];

@@ -144,22 +144,30 @@ export function MapView({
         </Button>
       )}
 
-      {/* Legend */}
+      {/* Legend — collapsible + scrollable so many trips don't overflow the map */}
       {legend && legend.length ? (
-        <div className="absolute bottom-2 left-2 z-[1000] rounded bg-white/90 p-2 text-xs shadow">
-          <div className="font-medium mb-1">Trips</div>
-          <ul className="space-y-1">
+        <details
+          open
+          className="group absolute bottom-2 left-2 z-[1000] max-w-[min(260px,60%)] rounded border bg-background/90 text-foreground text-xs shadow backdrop-blur-sm"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2 py-1.5 font-medium select-none [&::-webkit-details-marker]:hidden">
+            <span>Trips ({legend.length})</span>
+            <span className="text-muted-foreground transition-transform group-open:rotate-90">
+              ›
+            </span>
+          </summary>
+          <ul className="max-h-40 space-y-1 overflow-y-auto px-2 pb-2">
             {legend.map((l, i) => (
-              <li key={i} className="flex items-center gap-2">
+              <li key={i} className="flex items-start gap-2">
                 <span
-                  className="inline-block h-2.5 w-2.5 rounded"
+                  className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded"
                   style={{ backgroundColor: l.color }}
                 />
-                <span>{l.label}</span>
+                <span className="leading-tight">{l.label}</span>
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       ) : null}
     </div>
   );

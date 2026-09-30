@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fleet Management Platform",
+  title: "Fleet Telemetry Platform",
   description:
-    "Data-driven web app for fleet operators to ingest GPS/IoT data and analyze insights",
+    "Ingest, clean and analyze vehicle GPS/IoT telemetry — trip segmentation, route maps and fleet KPIs",
 };
 
 export default function RootLayout({
@@ -41,22 +41,16 @@ export default function RootLayout({
                 </Link>
                 <nav className="hidden md:flex items-center gap-4 text-sm">
                   <Link
-                    href="/import"
+                    href="/dashboard"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Participants
+                    Dashboard
                   </Link>
                   <Link
                     href="/telemetry/import"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Telemetry
-                  </Link>
-                  <Link
-                    href="/dashboard"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Dashboard
+                    Import
                   </Link>
                 </nav>
               </div>

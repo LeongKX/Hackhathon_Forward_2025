@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, TrendingUp, Users } from "lucide-react";
+import { Upload, TrendingUp, Map } from "lucide-react";
 
 export default function Home() {
   return (
@@ -15,33 +15,46 @@ export default function Home() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-5xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Fleet Management Platform
+            Fleet Telemetry Platform
           </h1>
           <p className="mx-auto max-w-2xl text-xl text-zinc-600 dark:text-zinc-400">
-            Data-driven web app for fleet operators to ingest GPS/IoT data and
-            turn them into actionable insights
+            Ingest raw GPS/IoT vehicle data, clean out bad fixes, segment it into
+            trips, and turn it into actionable fleet insights.
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-12">
           <Card className="transition-all hover:shadow-lg">
             <CardHeader>
-              <Users className="h-10 w-10 mb-2 text-blue-600" />
-              <CardTitle>Participants Import</CardTitle>
+              <TrendingUp className="h-10 w-10 mb-2 text-blue-600" />
+              <CardTitle>Analytics Dashboard</CardTitle>
               <CardDescription>
-                Upload CSV files with participant data including name, email,
-                team, and score
+                Per-vehicle KPIs, speed and fuel charts, and date-range filtering
+                scoped to each vehicle&apos;s available data.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/import">
-                <Button className="w-full">Import Participants</Button>
+              <Link href="/dashboard">
+                <Button className="w-full">Open Dashboard</Button>
               </Link>
-              <a href="/sample.csv" download className="block">
+            </CardContent>
+          </Card>
+
+          <Card className="transition-all hover:shadow-lg">
+            <CardHeader>
+              <Map className="h-10 w-10 mb-2 text-purple-600" />
+              <CardTitle>Trip Segmentation</CardTitle>
+              <CardDescription>
+                Routes split into trips by time gaps, distance jumps and engine
+                state, then rendered on the map with per-trip stats.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link href="/dashboard">
                 <Button variant="outline" className="w-full">
-                  Download Sample CSV
+                  View Routes
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
@@ -50,8 +63,8 @@ export default function Home() {
               <Upload className="h-10 w-10 mb-2 text-green-600" />
               <CardTitle>Telemetry Import</CardTitle>
               <CardDescription>
-                Import vehicle GPS and IoT sensor data with speed, fuel,
-                location, and more
+                Import vehicle GPS and IoT sensor data — speed, fuel, location,
+                odometer and more — from CSV.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -63,22 +76,6 @@ export default function Home() {
                   Download Sample CSV
                 </Button>
               </a>
-            </CardContent>
-          </Card>
-
-          <Card className="transition-all hover:shadow-lg">
-            <CardHeader>
-              <TrendingUp className="h-10 w-10 mb-2 text-purple-600" />
-              <CardTitle>Analytics Dashboard</CardTitle>
-              <CardDescription>
-                View real-time KPIs, charts, and route maps for your fleet
-                vehicles
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/dashboard">
-                <Button className="w-full">Open Dashboard</Button>
-              </Link>
             </CardContent>
           </Card>
         </div>
@@ -93,28 +90,28 @@ export default function Home() {
                 <h3 className="font-semibold mb-2">📊 Real-time Analytics</h3>
                 <p className="text-sm text-muted-foreground">
                   Track distance traveled, average speed, and idle time with
-                  interactive charts
+                  interactive charts.
                 </p>
               </div>
               <div>
                 <h3 className="font-semibold mb-2">🗺️ Route Visualization</h3>
                 <p className="text-sm text-muted-foreground">
-                  View vehicle routes on OpenStreetMap with polylines and
-                  markers
+                  View vehicle routes on OpenStreetMap with per-trip polylines
+                  and start/end markers.
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">📁 CSV Import</h3>
+                <h3 className="font-semibold mb-2">🧹 GPS Cleaning</h3>
                 <p className="text-sm text-muted-foreground">
-                  Bulk import participants and telemetry data with validation
-                  and error reporting
+                  Bad network fixes — null-island (0,0), unlocated points and
+                  teleport glitches — are filtered out automatically.
                 </p>
               </div>
               <div>
                 <h3 className="font-semibold mb-2">🔍 Advanced Filtering</h3>
                 <p className="text-sm text-muted-foreground">
-                  Filter by vehicle and date range to analyze specific time
-                  periods
+                  Filter by vehicle and a date range constrained to that
+                  vehicle&apos;s available data.
                 </p>
               </div>
             </div>
